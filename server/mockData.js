@@ -1,5 +1,7 @@
 const uuid = require('uuid');
 const status = [true, false];
+const categories = ['action',
+  'international', 'comedy', 'sci-fi', 'horror', 'drama', 'thriller', 'romance', 'docuseries', 'mystery'];
 const regions = ['North America', 'South America', 'Europe', 'Africa', 'Antartica', 'Asia', 'Australia'];
 getRandomInt = (min, max) => {
   const min1 = Math.ceil(min);
@@ -136,6 +138,7 @@ const genreEvent = {
 const watchEvent = {
   viewId: uuid.v4(),
   timestamp: Date.now(),
+  genre: categories[getRandomInt(0, 11)],
   userId: uuid.v4(),
   minutesWatched: getRandomInt(0, 107),
   region: regions[getRandomInt(0, 7)],

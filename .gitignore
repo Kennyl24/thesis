@@ -2,9 +2,12 @@ package-lock.json
 /target
 newrelic_agent.log
 /spec/newrelic_agent.log
+/spec/artill.yml
 myFirstInstance.pem
-
-
+.coveralls.yml
+.travis.yml
+/coverage
+POM.xml
 # OS X
 .DS_Store
 

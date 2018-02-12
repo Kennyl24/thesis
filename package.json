@@ -9,12 +9,14 @@
     "node": ">=6.4.0"
   },
   "scripts": {
+    "coverage": "istanbul cover ./node_modules/mocha/bin/_mocha spec/eventLogger.js",
     "test": "mocha spec/eventLogger.js",
     "start": "nodemon server/client_server.js",
     "access": "nodemon server/consumerKafka.js"
   },
   "dependencies": {
     "@newrelic/native-metrics": "^2.1.2",
+    "aws-sdk": "^2.192.0",
     "axios": "^0.17.1",
     "bluebird": "^3.5.1",
     "cassandra-driver": "^3.3.0",
