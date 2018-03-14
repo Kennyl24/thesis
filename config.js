@@ -1,16 +1,16 @@
 const config = {
-  zkConStr: 'localhost:2181/',
+  zkConStr: 'localhost:2181',
   logger: {
-    debug: msg => console.log(msg),
-    info: msg => console.log(msg),
-    warn: msg => console.log(msg),
-    error: msg => console.error(msg)
+    debug: msg => console.log('hi1', msg),
+    info: msg => console.log('hi2', msg),
+    warn: msg => console.log('hi3', msg),
+    error: msg => console.error('hi4', msg)
   },
   groupId: 'kafka-streams-test',
   clientName: 'kafka-streams-test-name',
   workerPerPartition: 1,
   options: {
-    sessionTimeout: 8000,
+    sessionTimeout: 10000,
     protocol: ['roundrobin'],
     fromOffset: 'earliest', //latest
     fetchMaxBytes: 1024 * 100,

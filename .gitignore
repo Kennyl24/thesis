@@ -10,10 +10,11 @@ myFirstInstance.pem
 POM.xml
 # OS X
 .DS_Store
-
+/aws 
 # Logs
 logs
 *.log
+/Configuration
 
 # Runtime data
 pids

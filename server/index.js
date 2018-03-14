@@ -4,31 +4,21 @@ const bodyParser = require('body-parser');
 const http = require('http');
 const app = express();
 const path = require('path');
+const cron = require('cron');
 const cassandra = require('cassandra-driver');
-const mockData = require('./mockData.js');
 const client = new cassandra.Client({ contactPoints: ['localhost'], keyspace: 'netflixevents' });
-client.connect()
-  .then(function () {
-    console.log('Connected to cluster with %d host(s): %j', client.hosts.length, client.hosts.keys());
-    console.log('Keyspaces: %j', Object.keys(client.metadata.keyspaces));
-    console.log('Shutting down');
-    client.shutdown();
-  })
-  .catch(function (err) {
-    console.error('There was an error when connecting', err);
-    client.shutdown();
-  });
+const mockData = require('./mockData.js');
 app.use(bodyParser.json());
-const Promise = require('bluebird');
-const request = require('request');
 app.use(express.static('client'));
 app.use(express.static(path.join(__dirname, 'client')));
 const kafka = require('kafka-node');
 const kafkaClient = new kafka.Client();
+const thisClient = new kafka.Client('zookeeper:2181');
 const producer = new kafka.HighLevelProducer(kafkaClient);
 const cluster = require('cluster');
 const numCPUs = require('os').cpus().length;
 const uuid = require('uuid');
+const port = process.env.port || 8080;
 const status = [true, false];
 const categories = ['action', 'international', 'comedy', 'sci-fi', 'horror', 'drama', 'thriller', 'romance', 'docuseries', 'mystery'];
 const regions = ['North America', 'South America', 'Europe', 'Africa', 'Antartica', 'Asia', 'Australia'];
@@ -38,7 +28,92 @@ getRandomInt = (min, max) => {
   return Math.floor(Math.random() * (max2 - min1)) + min1;
 };
 producer.on('error', (err) => { console.log('hi', err); });
+Consumer = kafka.Consumer;
+logoutConsumer = new Consumer(
+  thisClient,
+  [
+    { topic: 'logout', partition: 0 }
+  ],
+  {
+    autoCommit: false
+  }
+);
+logoutConsumer.on('error', function (err) {
+  console.log('error', err);
+});
+loginConsumer = new Consumer(
+  kafkaClient,
+  [
+    { topic: 'login', partition: 0 }
+  ],
+  {
+    autoCommit: false
+  }
+);
+searchConsumer = new Consumer(
+  thisClient,
+  [
+    { topic: 'search', partition: 0 }
+  ],
+  {
+    autoCommit: false
+  }
+);
+videosViewedConsumer = new Consumer(
+  kafkaClient,
+  [
+    { topic: 'watched_videos', partition: 0 }
+  ],
+  {
+    autoCommit: false
+  }
+);
+ratioConsumer = new Consumer(
+  kafkaClient,
+  [
+    { topic: 'finalTesty', partition: 0 }
+  ],
+  {
+    autoCommit: false
+  }
+);
+minutesConsumer = new Consumer(
+  kafkaClient,
+  [
+    { topic: 'finalTester1', partition: 0 }
+  ],
+  {
+    autoCommit: false
+  }
+);
+logoutConsumer.on('message', function (message) {
+  message = JSON.parse(message.value);
+  const userTest = message.userId;
+  const log = message.log;
+  const region = message.region;
+  const date = '' + message.timestamp;
+  const query = 'INSERT INTO netflixevents.logout (user_id,posted_date,log,region) VALUES (?, ?, ?, ?)';
+  client.execute(query, [userTest, date, log, region], { prepare: true})
+    .then(result => console.log('query complete'));
+});
+loginConsumer.on('message', function(message) {
+  console.log('message');
+});
+searchConsumer.on('message', function(message) {
+  console.log('message');
+});
+videosViewedConsumer.on('message', function(message) {
+  console.log('message');
+});
+ratioConsumer.on('message', function(message) {
+  console.log('message');
+});
+minutesConsumer.on('message', function(message) {
+  console.log('message');
+});
+
 app.get('/userLogin', (req, response) => {
+
   const loginEvent = {
     timestamp: Date.now(),
     userId: uuid.v4(),
@@ -46,10 +121,8 @@ app.get('/userLogin', (req, response) => {
     log: 'login',
     sessionId: uuid.v4(),
   };
-  const logEvent = mockData.loginEvent;
-  //const logEvent = req.body;
+  //const loginEvent = req.body;
   const buffer = new Buffer.from(JSON.stringify(loginEvent));
-  console.log(logEvent);
   const record = [
     {
       topic: 'login',
@@ -58,7 +131,7 @@ app.get('/userLogin', (req, response) => {
     }
   ];
   producer.send(record, () => {
-    console.log('donerd sending payloads', buffer);
+    console.log(record);
   });
   response.send('thank you');
 });
@@ -69,12 +142,12 @@ app.get('/userSignout', (req, response) => {
   const record = [
     {
       topic: 'logout',
-      messages: signoutEvent,
+      messages: buffer,
       attributes: 1 
     }
   ];
   producer.send(record, () => {
-    console.log('done sending payloads');
+    console.log('done sending payloads', record);
   });
   response.send('thank you');
 });
@@ -260,8 +333,14 @@ app.get('/moviesWatched', (req, response) => {
   sendToUserService(watchEvent);
   response.send('got it');
 });
+// const job = new cron.CronJob({
+//   cronTime: '00 01 12 * *',
+//   onTick: '', 
+//   start: false,
+//   timeZone: 'America/Los_Angeles',
+// });
+// job.start();
 const sendToUserService = (data) => {
-  console.log('in func');
   app.post('/userVideo', (req, res) => {
     console.log('in post');
     // const movieWatched = mockData.movieWatched;
@@ -278,8 +357,12 @@ if (cluster.isMaster) {
     console.log(`worker ${worker.process.pid} died`);
   });
 } else {
-  http.createServer(app).listen(3100);
+  http.createServer(app).listen(port);
   console.log(`Worker ${process.pid} started`);
 }
+
+// app.listen(port, () => {
+//   console.log(`listening to port ${port}`);
+// });
+
 module.exports = app;
-module.exports.client = client;

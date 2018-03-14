@@ -1,0 +1,18 @@
+const allAnagrams = function(string) {
+  const recurse = (start, remaining) => {
+    if (remaining.length === 1) {
+      return [start + remaining];
+    } else {
+      const result = [];
+	    for (let i = 0; i < remaining.length; i++) {
+	      const anagram = recurse(remaining[i], remaining.slice(0, i) + remaining.slice(i + 1));
+	      for (let j = 0; j < anagram.length; j++) {
+	        result.push(start + anagram[j]);
+	      }
+	    }
+	    return result;
+	  }
+  };
+	  return recurse('', string);
+  // Your code here.
+};

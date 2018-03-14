@@ -1,6 +1,7 @@
 const chai = require('chai');
 const chaiHttp = require('chai-http');
 const server = require('../server/client_server.js');
+const database = require('../database/index.js');
 const should = chai.should();
 const expect = chai.expect;
 
@@ -8,14 +9,14 @@ chai.use(chaiHttp);
 
 describe('Cassandra connection', () => {
   it('client.connect should', (done) => {
-    server.client.connect((err, result) => {
+    database.client.connect((err, result) => {
       console.log('in here');
       if (err) {
         done(err);
       }
-      expect(server.client.hosts.length).to.equal(1);
-      console.log(server.client.metadata.keyspaces.netflixevents);
-      server.client.metadata.keyspaces.should.have.property('netflixevents');
+      expect(database.client.hosts.length).to.equal(1);
+      console.log(database.client.metadata.keyspaces.netflixevents);
+      database.client.metadata.keyspaces.should.have.property('netflixevents');
       done();
     });
   });
@@ -160,7 +161,7 @@ describe('/POST user video', () => {
 
 describe('/POST user video', () => {
 
-  it('should return Bad Request', (done) => {
+  it('should return Bad POST Request', (done) => {
     chai.request(server)
       .post('/INVALID_PATH')
       .end(function(res) {

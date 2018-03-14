@@ -8,13 +8,26 @@ const signoutStream = kafkaStreams.getKStream('logout');
 const searchStream = kafkaStreams.getKStream('search');
 const vidoesViewedStream = kafkaStreams.getKStream('watched_videos');
 const ratioStream = kafkaStreams.getKStream('finalTesty');
-const minutesStream = kafkaStreams.getKStream('finalTester1'); //minutecollector
+//const minutesStream = kafkaStreams.getKStream('finalTester1'); // minuteCollector
+//const logStream = kafkaStreams.getKStream('whateverissavedforminutestsream'); 
+const cron = require('cron');
 const cassandra = require('cassandra-driver');
-const client = new cassandra.Client({ contactPoints: ['localhost'], keyspace: 'excelsior' });
+const client = new cassandra.Client({ contactPoints: ['localhost'], keyspace: 'netflixevents' });
 const cluster = require('cluster');
 const http = require('http');
+//const database = require('../database/index.js');
+const port = process.env.port || 3800;
 const numCPUs = require('os').cpus().length;
+// const logMinuteJob = new cron.CronJob({
+//   cronTime: '00 01 12 * *',
+//   onTick: insertBusinessQuestionMinuteLog(),  
+//   // at this time (10 minutes later than insertion, retrvieve data and save to CSV for data scientists to anaylze )
+//   start: false,
+//   timeZone: 'America/Los_Angeles',
+// });
+// logMinuteJob.start();
 loginStream.forEach(message => {
+  console.log('in here doe', message);
   message = JSON.parse(message.value);
   const userTest = message.userId;
   const log = message.log;
@@ -71,37 +84,51 @@ vidoesViewedStream.start().then(_ => {
 });
 ratioStream.take(1);
 ratioStream.forEach(message => {
-  console.log(' in here barely', message);
   message = JSON.parse(message.value);
   const date = JSON.stringify(JSON.stringify(new Date()).split('T')[0].slice(1));
-  console.log(date);
   const ratiolog = JSON.stringify(message);
-  console.log(typeof ratiolog);
-  const query = 'INSERT INTO netflixevents.dailyRatios (date, ratiolog) VALUES (?, ?)';
+  const query = 'INSERT INTO netflixevents.daily_ratios (date, ratiolog) VALUES (?, ?)';
   client.execute(query, [date, ratiolog], { prepare: true})
     .then(result => console.log('query complete', result));
 });
 ratioStream.start().then(_ => {
   console.log('starting ratio Stream');
 });
-minutesStream
-  .mapStringToKV(' ', 0, 1)
-  .sumByKey('key', 'value', 'sum')
-  .map(kv => JSON.parse(kv.key) + ':' + (kv.sum))
-  .tap(kv => console.log(kv))
-  .to('finalTester2');
-minutesStream.start().then(_ => {
-  console.log('starting minutes calc Stream');
+// minutesStream
+//   .mapStringToKV(' ', 0, 1)
+//   .sumByKey('key', 'value', 'sum')
+//   .map(kv => JSON.parse(kv.key) + ':' + (kv.sum))
+//   .tap(kv => console.log(kv))
+//   .to('finalTester2');
+// minutesStream.start().then(_ => {
+//   console.log('starting minutes calc Stream');
+// });
+// const insertBusinessQuestionMinuteLog = () => {
+//   logStream.forEach(message => {
+//     message = JSON.parse(message.value);
+//     const minutesLog = JSON.stringify(message);
+//     const todaysDate = JSON.stringify(date).split('T')[0].slice(1);
+//     const query = 'INSERT INTO netflixevents.minutesWatched (date,minutesLog) VALUES (?, ?)';
+//     client.execute(query, [todaysDate, minutesLog], { prepare: true})
+//       .then(result => console.log('query complete'));
+//   });
+// };
+// log.start().then(_ => {
+//   console.log('starting log calc Stream');
+// });
+// if (cluster.isMaster) {
+//   console.log(`THIsMaster ${process.pid} is running`);
+//   for (let i = 0; i < numCPUs; i++) {
+//     cluster.fork();
+//   }
+//   cluster.on('exit', (worker, code, signal) => {
+//     console.log(`worker ${worker.process.pid} died`);
+//   });
+// } else {
+//   http.createServer(app).listen(port);
+//   console.log(`Worker ${process.pid} started`);
+// }
+
+app.listen(port, () =>  {
+  console.log("Listening on port 3800");
 });
-if (cluster.isMaster) {
-  console.log(`Master ${process.pid} is running`);
-  for (let i = 0; i < numCPUs; i++) {
-    cluster.fork();
-  }
-  cluster.on('exit', (worker, code, signal) => {
-    console.log(`worker ${worker.process.pid} died`);
-  });
-} else {
-  http.createServer(app).listen(3800);
-  console.log(`Worker ${process.pid} started`);
-}

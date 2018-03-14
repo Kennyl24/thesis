@@ -1,0 +1,21 @@
+# stress testing
+
+config:
+  target: 'http://locahost:3100'
+  phases:
+    - duration: 100
+      arrivalRate: 10000
+  defaults:
+    headers:
+      x-my-service-auth: '987401838271002188298567'
+scenarios:
+  - flow:
+    - get:
+        url: "/userLogin"
+# quick tests
+# artillery quick --count 100 -n 1000 http://localhost:/genres
+# artillery quick --count 100 -n 1000 http://localhost:3100/searchHistory
+# artillery quick --count 100 -n 1000 http://localhost:3100/moviesWatched
+# artillery quick --count 100 -n 1000 http://localhost:3100/userSignout
+# artillery quick --count 10 -n 1000 http://localhost:8080/userLogin
+# artillery quick --count 100 -n 1000 http://locahost:3100/userVideo
